@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" http-equiv="Pragma" content="width=device-width, initial-scale=1">
+<meta content="no-cache">
+<meta charset="utf-8">
+<title></title>
+
+<style></style>
+</head>
+<body onload="onLoad()">
+<!-- <center> -->
+<h2></h2>
+<fieldset>
+<legend align="right">Cấu hình wifi </legend>
+Tên wifi:<br>
+<input id="nWf" type="text" name="nWf" size="15">
+<br>
+Mật khẩu:<br>
+<input id="pWf" type="text" name="pWf" size="15">
+<br>
+<br>
+<button onclick="saveWfconf()" type="button">Lưu cài đặt</button>
+<button onclick="defaWfconf()" type="button">Mặc định</button>
+</fieldset>
+<br>
+<fieldset>
+<legend align="right">Thông tin đăng nhập</legend>
+<form >
+Tên tài khoản:<br>
+<input id="nAcc" type="text" name="nAcc" size="15">
+<br>
+Mật khẩu:<br>
+<input id="pAcc" type="text" name="pAcc" size="15">
+<br>
+<br>
+<button type="button" onclick="saveAccconf()">Lưu cài đặt</button>
+<button type="button" onclick="defaAccconf()">Mặc định</button>
+</form>
+<!--<input id="cntDw" type="text"  value="">-->
+
+</fieldset>
+<br>
+<fieldset>
+<legend align="right">Hệ thống</legend>
+Thông tin thiết bị:
+<p id="stInf"></p>
+<form enctype="multipart/form-data">
+<input type="file" id="isFile" accept=".bin" onchange="fileInfo()">
+<button type="button" onclick="onUpload()">Tải lên</button>
+</form>
+<p id="fInf"></p>
+Danh sách file:<br>
+<textarea id="fList" rows="4" cols="50" value=""></textarea>
+<br>
+<input type="text" id="fDel" placeholder="Tên đầy đủ file">
+<button type="button" onclick="delActive()">Xóa file</button><br><br>
+<button type="button" onclick="flshDef()">Thiết lập xuất xưởng</button>
+<button type="button" onclick="flshBak()">Trở lại trước cập nhật</button>
+<button type="button" onclick="flshUpd()">Cập nhật mới nhất</button>
+<!-- return confirm('Bạn có muốn xóa file không?') -->
+</fieldset>
+<br>
+<button type="button" onclick="alert('Thiết bị sẽ khởi động lại sau 5s!')">Khởi động lại wifi</button>
+<button type="button" onclick="alert('Thiết bị sẽ khởi động lại sau 5s!')">Khởi động lại hệ thống</button>
+<script>
+
+
+function fileInfo() {
+var f = $('isFile');
+//var fileName = f.files[0].name;
+if (f.files[0] == undefined) {
+// in case select cancel
+$('fInf').innerHTML = "";
+return;
+} else {
+f = f.files[0];
+var fileType = f.type;
+var fileModifiedDate = f.lastModifiedDate;
+var date = fileModifiedDate;
+var ex = f.name.substring(f.name.lastIndexOf('.'), f.name.lengt);
+
+if (ex !== ".bin") {
+$('fInf').innerHTML = "Chọn lại file!";
+$('isFile').value = null;
+return;
+}
+
+if (f.size > 51200) {
+$('fInf').innerHTML = "Chọn file có dung lượng nhỏ hơn!";
+$('isFile').value = null;
+return;
+}
+;
+fileModifiedDate = date.getHours()+':' + date.getMinutes()+':' + date.getSeconds()+' ' + date.getDate()+'/' + (date.getMonth() + 1)+'/' + date.getFullYear();
+
+var file_info = "Kích thước: " + f.size + "B; Thời gian:" + fileModifiedDate;
+//alert(file_info);
+$('fInf').innerHTML = file_info;
+}
+}
+
+function saveWfconf() {
+ajaxReq('POST','/wfconfig?' + $('nWf').name + '=' + $('nWf').value + '&' + $('pWf').name + '=' + $('pWf').value,null,function(responseText){ 
+alert(responseText); 
+});
+}
+
+function defaWfconf() {
+ajaxReq('POST','/wfconfig?defa=true',null,function(responseText){ 
+$('nWf').value= responseText;
+$('pWf').value='12345678'; 
+});
+}
+
+function saveAccconf() {
+ajaxReq('POST','/Accconfig?' + $('nAcc').name + '=' + $('nAcc').value + '&' + $('pAcc').name + '=' + $('pAcc').value,null,function(responseText){ 
+alert(responseText); 
+});
+}
+
+function defaAccconf() {
+$('nAcc').value='admin';
+$('pAcc').value='admin';
+}
+
+function flshDef() {
+ajaxReq('POST','/flash?file=factory.bin',null,function(responseText){ 
+alert(responseText); 
+});
+}
+
+function flshBak() {
+ajaxReq('POST','/flash?file=backup.bin',null,function(responseText){ 
+alert(responseText); 
+});
+}
+function flshUpd() {
+ajaxReq('POST','/flash?file=update.bin',null,function(responseText){ 
+alert(responseText); 
+});
+}
+function onUpload(){
+// Form Data
+var formData = new FormData();
+
+var fileSelect = $("isFile");
+if(fileSelect.files && fileSelect.files.length == 1){
+var file = fileSelect.files[0]
+formData.set("file", file , file.name);
+}
+else{
+alert("Chưa chọn file!");
+return;
+}
+
+ajaxReq('POST','/upload',formData,function(responseText){ 
+$('fInf').innerHTML =responseText;
+setTimeout(function(){ getList(); $('isFile').value = null;}, 100);			    	
+});    
+}
+
+function delActive() {            
+ajaxReq('GET','delete?file=' + $("fDel").value,null,function(responseText){ 
+alert(responseText);
+setTimeout(function(){ getList(); }, 100);	
+});
+}
+
+function onLoad(){
+	ajaxReq('GET','infor',null,function(responseText){ 
+var res = responseText.split(";");
+$('nWf').value = res[0];
+$('pWf').value = res[1];
+$('nAcc').value = res[2];
+$('pAcc').value = res[3];
+setTimeout(function(){ getList(); }, 100);	
+});
+
+}
+function getList(){
+ajaxReq('GET','list',null,function(responseText){ 
+$("fList").value=responseText; 
+});
+}
+
+function $(id) {
+return document.getElementById(id);
+}
+
+function ajaxReq(menth,req,body,callback){
+var rq = new XMLHttpRequest();
+rq.open(menth, req,true);
+rq.onreadystatechange = function() {
+if (rq.readyState == 4 && rq.status == 200){
+callback(rq.responseText);                        
+}
+}
+rq.send(body);
+}
+/*
+function countdown(remaining) {
+if(remaining <= 0)
+location.reload(true);
+document.getElementById('cntDw').innerHTML = remaining;
+setTimeout(function(){ countdown(remaining - 1); }, 1000);
+}(5); // 5 seconds
+//<=>countdown(5);
+*/
+</script>
+</body>
+</html>

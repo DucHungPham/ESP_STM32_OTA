@@ -11,7 +11,7 @@ void writeString(char add,String data)
   {
     EEPROM.write(add+i,data[i]);
   }
-  EEPROM.write(add+_size,'\0');   //Add termination null character for String Data
+  EEPROM.write(add+_size,'\0');   
   EEPROM.commit();
 }
 
@@ -22,7 +22,7 @@ String read_String(char add)
   int len=0;
   unsigned char k;
   k=EEPROM.read(add);
-  while(k != '\0' && len<16)   //Read until null character
+  while(k != '\0' && len<16)   
   {    
     k=EEPROM.read(add+len);
     data[len]=k;

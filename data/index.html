@@ -25,23 +25,6 @@ Mật khẩu:<br>
 </fieldset>
 <br>
 <fieldset>
-<legend align="right">Thông tin đăng nhập</legend>
-<form >
-Tên tài khoản:<br>
-<input id="nAcc" type="text" name="nAcc" size="15">
-<br>
-Mật khẩu:<br>
-<input id="pAcc" type="text" name="pAcc" size="15">
-<br>
-<br>
-<button type="button" onclick="saveAccconf()">Lưu cài đặt</button>
-<button type="button" onclick="defaAccconf()">Mặc định</button>
-</form>
-<!--<input id="cntDw" type="text"  value="">-->
-
-</fieldset>
-<br>
-<fieldset>
 <legend align="right">Hệ thống</legend>
 Thông tin thiết bị:
 <p id="stInf"></p>
@@ -61,8 +44,8 @@ Danh sách file:<br>
 <!-- return confirm('Bạn có muốn xóa file không?') -->
 </fieldset>
 <br>
-<button type="button" onclick="alert('Thiết bị sẽ khởi động lại sau 5s!')">Khởi động lại wifi</button>
-<button type="button" onclick="alert('Thiết bị sẽ khởi động lại sau 5s!')">Khởi động lại hệ thống</button>
+<button type="button" onclick="wfRST()">Khởi động lại wifi</button>
+<button type="button" onclick="syRST()">Khởi động lại hệ thống</button>
 <script>
 
 
@@ -113,17 +96,6 @@ $('pWf').value='12345678';
 });
 }
 
-function saveAccconf() {
-ajaxReq('POST','/Accconfig?' + $('nAcc').name + '=' + $('nAcc').value + '&' + $('pAcc').name + '=' + $('pAcc').value,null,function(responseText){ 
-alert(responseText); 
-});
-}
-
-function defaAccconf() {
-$('nAcc').value='admin';
-$('pAcc').value='admin';
-}
-
 function flshDef() {
 ajaxReq('POST','/flash?file=factory.bin',null,function(responseText){ 
 alert(responseText); 
@@ -137,6 +109,16 @@ alert(responseText);
 }
 function flshUpd() {
 ajaxReq('POST','/flash?file=update.bin',null,function(responseText){ 
+alert(responseText); 
+});
+}
+function wfRST() {
+ajaxReq('POST','/wifi_rst',null,function(responseText){ 
+alert(responseText); 
+});
+}
+function syRST() {
+ajaxReq('POST','/syst_rst',null,function(responseText){ 
 alert(responseText); 
 });
 }
@@ -172,8 +154,6 @@ function onLoad(){
 var res = responseText.split(";");
 $('nWf').value = res[0];
 $('pWf').value = res[1];
-$('nAcc').value = res[2];
-$('pAcc').value = res[3];
 setTimeout(function(){ getList(); }, 100);	
 });
 

@@ -15,6 +15,4 @@
 
 #define nWf 0x00
 #define pWf 0x10
-#define nAcc 0x20
-#define pAcc 0x30
 #endif

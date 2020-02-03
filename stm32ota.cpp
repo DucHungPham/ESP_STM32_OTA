@@ -3,12 +3,12 @@
 
 
 
-void stm32SendCommand(unsigned char commd) {    // Tested
+void stm32SendCommand(unsigned char commd) {    
   Serial.write(commd);
   Serial.write(~commd);
 }
 
-unsigned char stm32Erase() {     // Tested
+unsigned char stm32Erase() {     
   stm32SendCommand(STM32ERASE);
   while (!Serial.available());
   if (Serial.read() == STM32ACK)
@@ -21,7 +21,7 @@ unsigned char stm32Erase() {     // Tested
   return Serial.read();
 }
 
-unsigned char stm32Erasen() {     // Tested
+unsigned char stm32Erasen() {     
   stm32SendCommand(STM32ERASEN);
   while (!Serial.available());
   if (Serial.read() == STM32ACK)
@@ -35,33 +35,6 @@ unsigned char stm32Erasen() {     // Tested
   return Serial.read();
 }
 
-// No test yet
-unsigned char stm32Run()   {
-  stm32SendCommand(STM32RUN);
-  while (!Serial.available());
-  if (Serial.read() == STM32ACK) {
-    stm32Address(STM32STADDR);
-    return STM32ACK;
-  }
-  else
-    return STM32ERR;
-}
-
-// No test yet
-unsigned char stm32Read(unsigned char * rdbuf, unsigned long rdaddress, unsigned char rdlen) {
-  stm32SendCommand(STM32RD);
-  while (!Serial.available());
-  if (Serial.read() == STM32ACK)
-    stm32Address(rdaddress);
-  else return STM32ERR;
-  while (!Serial.available());
-  if (Serial.read() == STM32ACK)
-    stm32SendCommand(rdlen);
-  while (!Serial.available());
-  size_t getlen = Serial.available();
-  Serial.readBytes(rdbuf, getlen);
-  return STM32ACK;
-}
 
 unsigned char stm32Address(unsigned long addr) {    // Tested
   unsigned char sendaddr[4];
@@ -79,7 +52,7 @@ unsigned char stm32Address(unsigned long addr) {    // Tested
   return Serial.read();
 }
 
-unsigned char stm32SendData(unsigned char * data, unsigned char wrlen) {     // Tested
+unsigned char stm32SendData(unsigned char * data, unsigned char wrlen) {   
   Serial.write(wrlen);
   for (int i = 0; i <= wrlen; i++) {
     Serial.write(data[i]);
@@ -89,7 +62,7 @@ unsigned char stm32SendData(unsigned char * data, unsigned char wrlen) {     // 
   return Serial.read();
 }
 
-char stm32Version() {     // Tested
+char stm32Version() {     
   unsigned char vsbuf[14];
   stm32SendCommand(STM32GET);
   while (!Serial.available());
@@ -102,8 +75,8 @@ char stm32Version() {     // Tested
   }
 }
 
-unsigned char stm32GetId() {     // Tested
-  int getid = 0;
+unsigned int stm32GetId() {    
+  unsigned int getid = 0;
   unsigned char sbuf[5];
   stm32SendCommand(STM32ID);
   while (!Serial.available());
@@ -112,6 +85,8 @@ unsigned char stm32GetId() {     // Tested
     Serial.readBytesUntil(STM32ACK, sbuf, 4);
     getid = sbuf[1];
     getid = (getid << 8) + sbuf[2];
+    
+    /*
     if (getid == 0x444)
       return 1;
     if (getid == 0x440)
@@ -126,6 +101,7 @@ unsigned char stm32GetId() {     // Tested
       return 6;
     if (getid == 0x418)
       return 7;
+      */
   }
   else
     return 0;
@@ -137,6 +113,3 @@ unsigned char getChecksum( unsigned char * data, unsigned char datalen) {    // 
     lendata ^= data[i];
   return lendata;
 }
-
-
-

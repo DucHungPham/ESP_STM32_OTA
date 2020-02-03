@@ -1,21 +1,3 @@
-/*
-  AJAX: 
-  menthod 1
-  client gửi request dạng GET/PORT; Get: .../nội_dung?biến=giá_trị&biến=giá_trị
-  => client lấy giá trị bằng giá_trị = server.hasArg("biến")(String);
-  => client response: trả về trang xml(bao gồm các nhãn)
-  => webpage lấy các biến theo nhãn tương ứng(tùy chọn tên nhãn) <abc>biến</abc>
-  menthod 2
-  bản tin xml dạng ký tự thường(GET) .../nội_dung
-  http://www.martyncurrey.com/esp8266-and-the-arduino-ide-part-6-javascript-and-ajax/
-  hoặc server.arg()(PORT) https://github.com/esp8266/Arduino/blob/master/libraries/ESP8266WebServer/README.rst
-  ==>> sử dụng JSON giao tiếp giữa server và client thay vì xml
-https://techtutorialsx.com/2016/10/22/esp8266-webserver-getting-query-parameters/
-  WebSocket các trình duyệt chưa hỗ trợ hoàn toàn
-  https://circuits4you.com/2018/02/04/esp8266-ajax-update-part-of-web-page-without-refreshing/
-  nội dung gửi đi tùy chọn
-  */
-  
 #include "main.h"
 
 #define NRST 12
@@ -31,15 +13,10 @@ https://techtutorialsx.com/2016/10/22/esp8266-webserver-getting-query-parameters
 #define _cliStop  254
 
 //SSID and Password of your WiFi router
-//String ssid = "SRS_" + String(ESP.getChipId());
-//const char* password = "12345678";
-const char* ssid = "SmartRF";
-const char* password = "Smartrf321";
+String ssid = "VMS_" + String(ESP.getChipId());
+const char* password = "12345678";
 
 const char* resErr0 = "Err0";
-//const char* ssid = "who are you?";
-//const char* password = "qazwsx12";
-
 IPAddress local_IP(192, 168, 0, 2);
 IPAddress gateway(192, 168, 0, 1);
 IPAddress subnet(255, 255, 255, 0);
@@ -49,7 +26,7 @@ int i = 0;
 int rdtmp;
 int stm32ver;
 
-WiFiServer TCPserver(port);//ESP8266WebServer
+WiFiServer TCPserver(port);
 WiFiClient TCPserverClients[MAX_SRV_CLIENTS];
 uint32_t clientTimeout[MAX_SRV_CLIENTS];
 
@@ -60,33 +37,26 @@ uint8_t IsNewClient(){
   uint8_t i;
   //check if there are any new clients
   if (TCPserver.hasClient()){
-    //Serial.println("Has Client.");
+
     for(i = 0; i < MAX_SRV_CLIENTS; i++){
   /// timeout connect
       if(clientTimeout[i] < millis() && TCPserverClients[i]){
           TCPserverClients[i].stop();
-          //Serial.print("\nClient ");Serial.print(i,DEC);Serial.print("Stop(Timeout)");
         }
         
       //find free/disconnected slot//spot
       if (!TCPserverClients[i] || !TCPserverClients[i].connected()){ 
         if(TCPserverClients[i]){
           TCPserverClients[i].stop();
-        //Serial.print("\nClient ");Serial.print(i,DEC);Serial.print("Stop(Disconnect)");
         }
         TCPserverClients[i] = TCPserver.available();
         clientTimeout[i] = millis()+5000;
-        
-        //Serial.print("Client ");Serial.print(i,DEC);Serial.print(": ");
-        //Serial.println(serverClients[i].remoteIP());
-        //clienRep("Hello client");
         return i;
       }
     }
     //no free/disconnected spot so reject
     WiFiClient TCPserverClient = TCPserver.available();
     TCPserverClient.stop();
-    //Serial.println("Client reject.");
     return _cliStop;    
   }
   return _err; 
@@ -101,18 +71,13 @@ uint8_t  IsRequest(){
     if (TCPserverClients[i] && TCPserverClients[i].connected()){
       if(TCPserverClients[i].available())      {
         digitalWrite(LED, LOW);
-        //Serial.print("\nClient: ");Serial.println(i,DEC);
-        //serverClients[i].setTimeout(200);
+
         String recCli ="";
         while (TCPserverClients[i].available()>0) {
-          //char c = TCPserverClients[i].read();
-          //recCli +=c;  
           Serial.write(TCPserverClients[i].read());         
           }
         clientTimeout[i] = millis()+5000;
-       
-        //TCPserverClients[i].print(recCli);
-        //Serial.print(recCli);          
+              
         digitalWrite(LED, HIGH);
         return i;
       }    
@@ -126,7 +91,7 @@ void handleFlash()
   String flashwr;
   int lastbuf = 0;
   uint8_t cflag, fnum = 256;
-  //lấy tên file
+  //get file name
   String f = server.arg("file");
   f='/'+f;
   if (!SPIFFS.exists(f))
@@ -137,7 +102,7 @@ void handleFlash()
   Serial.begin(9600, SERIAL_8E1);
 
   delay(50);
-//===== khởi tạo
+//===== init
 unsigned char reInit=5,tmp8;
   while(reInit){
    
@@ -165,7 +130,7 @@ else{
   
 }
 
-///======= xóa chương trình ban đầu
+///======= delete file in stm32
   if (stm32Erase() == STM32ACK)
         flashwr += "Erase OK";
       else if (stm32Erasen() == STM32ACK)
@@ -174,7 +139,7 @@ else{
         flashwr += "Erase ER";
         goto endflash;
       }
-//==== Mở file cần nạp      
+//==== open file in flash      
   if (SPIFFS.exists(f)){
   fsUploadFile = SPIFFS.open(f, "r");
   if (fsUploadFile) {
@@ -224,7 +189,7 @@ else{
     goto endflash;
   }
   }else {
-    flashwr +="không thấy file!";
+    flashwr +="file not found!";
   }
   endflash:
       STM32Mode(mRun);
@@ -240,7 +205,7 @@ void STM32Mode(unsigned char m)  {
   digitalWrite(NRST, LOW);
   delay(10);
   digitalWrite(NRST, HIGH);
-  delay(500);// enough time to startup
+  delay(500);
 }
 
 void hibernate(int pInterval) {
@@ -259,20 +224,13 @@ void startServer() {
   // handle file upload
  
   server.on("/upload", HTTP_POST, [](){
-    //String authName= read_String(nAcc);
-    //String authPassw = read_String(pAcc);
+
     // if(!server.authenticate("admin","admin")) {
   //  return server.requestAuthentication();
   //}
     server.send(200, "text/plain", "Tải lên thành công.");// Send status 200 (OK) to tell the client we are ready to receive
   }, handleFileUpload); // Receive and save the file
-  /*
-  server.onFileUpload(handleFileUpload);
-  server.on("/upload", HTTP_POST, []() {
-      server.send(200, "text/plain", "{\"success\":1}");
-    });
-    */
-
+  
   server.on("/wfconfig", HTTP_POST, []() {
       String res;
       //nWf = server.hasArg("nWf")? server.arg("nWf"):"None";
@@ -314,41 +272,20 @@ void startServer() {
     
   server.onNotFound(handleNotFound); 
   server.begin();                  //Start server
-  //Serial.println("HTTP server started");
+
 }
 
 void startWiFi() { 
   digitalWrite(LED, LOW);
- 
-  WiFi.mode(WIFI_STA);
-  //WiFi.config(local_IP, gateway, subnet);
-  WiFi.begin(ssid, password);
-/*
+
   delay(100);
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid, password);
   WiFi.softAPConfig(local_IP, gateway, subnet);
   delay(100);
-  */ 
+   
   digitalWrite(LED, HIGH);
 
-  // Wait for connection
-  /**/
-  while (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(LED, LOW);
-    delay(200);
-    digitalWrite(LED, HIGH);
-    delay(200);
-    //Serial.print(".");
-  }
-  
-    /**/
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());  
-  
 }
 
 void setup(void){
@@ -361,8 +298,8 @@ void setup(void){
   if(EEPROM.read(0)==0||EEPROM.read(0)==0xff){
     writeString(nWf,"VMS_" + String(ESP.getChipId()));delay(5);
     writeString(pWf,"12345678");delay(5);
-    writeString(nAcc,"admin");delay(5);
-    writeString(pAcc,"admin");delay(5);
+    //writeString(nAcc,"admin");delay(5);
+    //writeString(pAcc,"admin");delay(5);
   }
       
   //Onboard LED port Direction output
@@ -381,7 +318,6 @@ void setup(void){
   //STM32Mode(mRun); 
   digitalWrite(BOOT0, LOW);
   digitalWrite(NRST, HIGH);
-  //Serial.println("HTTP server started");
   
 }
 
@@ -390,30 +326,27 @@ void loop(void){
   server.handleClient();          //Handle client requests
 
   IsNewClient();
- IsRequest();
+  IsRequest();
 
  while(Serial.available() >0){
          
-  uint8_t i=0; char bf[2];
-  for(i = 0; i < MAX_SRV_CLIENTS; i++){
+  uint8_t i=0;
+  unsigned char tmp; 
+  tmp = Serial.read();
+  for(i = 0; i < MAX_SRV_CLIENTS; i++){    
   if (TCPserverClients[i] && TCPserverClients[i].connected()){
-        digitalWrite(LED, LOW);
-        //serverClients[i].print(tmp,HEX);
-        hex2str(Serial.read(),bf);
-        TCPserverClients[i].write(bf[0]);
-        TCPserverClients[i].write(bf[1]);
-        digitalWrite(LED, HIGH);
+        //digitalWrite(LED, LOW);      
+        TCPserverClients[i].write(hex2str(tmp>>4));
+        TCPserverClients[i].write(hex2str(tmp&0xf));
+        //digitalWrite(LED, HIGH);
     }
   }
   }  
  
 }
-
-void hex2str(unsigned char dat,char *buf){
-  unsigned char tmp;
-  tmp = dat>>4;
-  
-  buf[0] = (tmp > 9) ? ('A' + (tmp-10)) : ('0' + tmp);
-  tmp= dat&0xf;
-  buf[1] = (tmp > 9) ? ('A' + (tmp-10)) : ('0' + tmp);
+/**
+ * input 4bit value
+ */
+char hex2str(unsigned char niNum){ 
+  return (niNum > 9) ? ('A' + (niNum-10)) : ('0' + niNum);
 }
